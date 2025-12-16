@@ -2,14 +2,22 @@ services:
   - type: web
     name: terabox-downloader-bot
     env: python
+    region: singapore  # or oregon, frankfurt, etc
+    plan: free  # or starter, pro
+    branch: main
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn terabox:app
+    startCommand: gunicorn bot:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /health
     envVars:
       - key: BOT_TOKEN
         sync: false
+        value: "8420276164:AAE965Rj933Rs7t6fbI7bgGN3-RgapJNzgk"
       - key: PORT
-        value: 10000
+        value: "10000"
       - key: RENDER
-        value: true
-    healthCheckPath: /health
+        value: "true"
     autoDeploy: true
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1

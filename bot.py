@@ -1,17 +1,19 @@
+import os
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
 import asyncio
 import json
-import os
 import tempfile
 import time
 import re
+from flask import Flask, render_template_string
 
 # ==== BOT CONFIGURATION ====
-BOT_TOKEN = "8420276164:AAE965Rj933Rs7t6fbI7bgGN3-RgapJNzgk"
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8420276164:AAE965Rj933Rs7t6fbI7bgGN3-RgapJNzgk")
 API_BASE = "https://teradl.tiiny.io/"
 ALTERNATE_API = "https://terabox-api.vercel.app/api"
+PORT = int(os.environ.get("PORT", 8080))
 
 # ==== CREDIT INFORMATION ====
 CREDIT_TEXT = """
@@ -28,26 +30,183 @@ CREDIT_TEXT = """
 user_sessions = {}
 
 # =============================
-# /start COMMAND
+# WEB SERVER FOR RENDER
 # =============================
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    welcome_text = f"""
-🎯 *Welcome to Terabox Downloader Bot* 🎯
+app = Flask(__name__)
 
-Use command:
-• /genny [link] - For download generation
+@app.route('/')
+def home():
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Terabox Downloader Bot</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-align: center;
+                padding: 50px;
+                margin: 0;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 30px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+            h1 {
+                font-size: 2.5em;
+                margin-bottom: 20px;
+            }
+            .bot-info {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+                text-align: left;
+            }
+            .features {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin: 30px 0;
+            }
+            .feature {
+                background: rgba(255, 255, 255, 0.15);
+                padding: 20px;
+                border-radius: 10px;
+                transition: transform 0.3s;
+            }
+            .feature:hover {
+                transform: translateY(-5px);
+            }
+            .status {
+                margin-top: 30px;
+                padding: 15px;
+                background: rgba(76, 175, 80, 0.3);
+                border-radius: 10px;
+                font-weight: bold;
+            }
+            .telegram-link {
+                display: inline-block;
+                background: #0088cc;
+                color: white;
+                padding: 15px 30px;
+                text-decoration: none;
+                border-radius: 50px;
+                margin-top: 20px;
+                font-weight: bold;
+                transition: background 0.3s;
+            }
+            .telegram-link:hover {
+                background: #006699;
+            }
+            code {
+                background: rgba(0, 0, 0, 0.3);
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-family: monospace;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 Terabox Downloader Bot</h1>
+            <p style="font-size: 1.2em;">Fast and reliable Terabox video downloader Telegram bot</p>
+            
+            <div class="bot-info">
+                <h3>📋 Bot Information</h3>
+                <p><strong>Creator:</strong> Genny 🎀</p>
+                <p><strong>Channel:</strong> @NetFusionTG</p>
+                <p><strong>Status:</strong> <span style="color: #4CAF50;">● Online</span></p>
+                <p><strong>Host:</strong> Render Cloud</p>
+            </div>
+            
+            <div class="features">
+                <div class="feature">
+                    <h3>📥 Direct Download</h3>
+                    <p>Get direct download links for Terabox videos</p>
+                </div>
+                <div class="feature">
+                    <h3>📲 Telegram Download</h3>
+                    <p>Videos sent directly in Telegram chat</p>
+                </div>
+                <div class="feature">
+                    <h3>⚡ Fast Processing</h3>
+                    <p>Quick download link generation</p>
+                </div>
+                <div class="feature">
+                    <h3>🔒 Secure</h3>
+                    <p>Auto-delete original links for privacy</p>
+                </div>
+            </div>
+            
+            <div class="status">
+                ✅ Bot is running successfully on Render
+            </div>
+            
+            <h3>🚀 How to Use</h3>
+            <p>1. Open Telegram and search for the bot</p>
+            <p>2. Send command: <code>/genny [terabox_link]</code></p>
+            <p>3. Choose your download method</p>
+            
+            <a href="https://t.me/YOUR_BOT_USERNAME" class="telegram-link" target="_blank">
+                ✨ Start Using Bot on Telegram
+            </a>
+            
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                <p>Made with ❤️ by Genny</p>
+                <p>GitHub: Account-Nahi he</p>
+            </div>
+        </div>
+        
+        <script>
+            // Update status every 30 seconds
+            function updateStatus() {
+                fetch('/health')
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'healthy') {
+                            document.querySelector('.status').innerHTML = 
+                                '✅ Bot is running successfully on Render';
+                            document.querySelector('.status').style.background = 'rgba(76, 175, 80, 0.3)';
+                        }
+                    })
+                    .catch(() => {
+                        document.querySelector('.status').innerHTML = 
+                            '⚠️ Checking bot status...';
+                        document.querySelector('.status').style.background = 'rgba(255, 193, 7, 0.3)';
+                    });
+            }
+            
+            // Initial update
+            updateStatus();
+            
+            // Update every 30 seconds
+            setInterval(updateStatus, 30000);
+        </script>
+    </body>
+    </html>
+    """
+    return render_template_string(html)
 
-✨ *Features:*
-• Direct Download - Get download link
-• Telegram Download - Video sent directly in Telegram
-• Fast processing
-• Free to use
+@app.route('/health')
+def health_check():
+    return json.dumps({"status": "healthy", "timestamp": time.time()}), 200, {'Content-Type': 'application/json'}
 
-{CREDIT_TEXT}
-
-📌 *How to use:* Use /genny command with Terabox link!
-"""
-    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+@app.route('/api/status')
+def api_status():
+    return json.dumps({
+        "bot": "online",
+        "sessions": len(user_sessions),
+        "timestamp": time.time()
+    }), 200, {'Content-Type': 'application/json'}
 
 # =============================
 # GET DOWNLOAD LINK FROM MULTIPLE APIS
@@ -135,8 +294,27 @@ def get_download_link_from_apis(user_link):
     return None, "Video", "Unknown"
 
 # =============================
-# /genny COMMAND
+# TELEGRAM BOT FUNCTIONS
 # =============================
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    welcome_text = f"""
+🎯 *Welcome to Terabox Downloader Bot* 🎯
+
+Use command:
+• /genny [link] - For download generation
+
+✨ *Features:*
+• Direct Download - Get download link
+• Telegram Download - Video sent directly in Telegram
+• Fast processing
+• Free to use
+
+{CREDIT_TEXT}
+
+📌 *How to use:* Use /genny command with Terabox link!
+"""
+    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+
 async def genny_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text(
@@ -245,9 +423,6 @@ async def genny_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         pass
 
-# =============================
-# BUTTON CALLBACK HANDLER
-# =============================
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -262,9 +437,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = int(callback_data.split("_")[1])
         await handle_telegram_download(query, context, user_id)
 
-# =============================
-# HANDLE DIRECT DOWNLOAD
-# =============================
 async def handle_direct_download(query, context, user_id):
     """Handle direct download button click"""
     if user_id not in user_sessions:
@@ -299,9 +471,6 @@ async def handle_direct_download(query, context, user_id):
     if user_id in user_sessions:
         del user_sessions[user_id]
 
-# =============================
-# HANDLE TELEGRAM DOWNLOAD
-# =============================
 async def handle_telegram_download(query, context, user_id):
     """Handle telegram download button click"""
     if user_id not in user_sessions:
@@ -329,39 +498,20 @@ async def handle_telegram_download(query, context, user_id):
         parse_mode='Markdown'
     )
     
+    temp_path = None
     try:
         # Create temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
             temp_path = temp_file.name
         
-        # Download video with proper headers to avoid 403
+        # Download video with proper headers
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Range': 'bytes=0-',
-            'Referer': 'https://www.terabox.com/',
-            'Origin': 'https://www.terabox.com',
-            'Connection': 'keep-alive',
-            'Sec-Fetch-Dest': 'video',
-            'Sec-Fetch-Mode': 'no-cors',
-            'Sec-Fetch-Site': 'cross-site'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'video/*',
+            'Referer': 'https://www.terabox.com/'
         }
         
-        await query.message.edit_text(
-            f"⏬ *Downloading Video...*\n\n"
-            f"📁 *Title:* `{title}`\n"
-            f"📊 *Connecting to server...*\n\n"
-            f"{CREDIT_TEXT}",
-            parse_mode='Markdown'
-        )
-        
-        # Try to download with session to handle cookies
-        session = requests.Session()
-        session.headers.update(headers)
-        
-        response = session.get(download_url, stream=True, timeout=30)
+        response = requests.get(download_url, headers=headers, stream=True, timeout=30)
         
         if response.status_code == 200:
             total_size = int(response.headers.get('content-length', 0))
@@ -373,39 +523,15 @@ async def handle_telegram_download(query, context, user_id):
                     if chunk:
                         f.write(chunk)
                         downloaded += len(chunk)
-                        
-                        # Update progress
-                        if total_size > 0 and downloaded % (5 * 1024 * 1024) < chunk_size:
-                            percent = min(99, int((downloaded / total_size) * 100))
-                            await query.message.edit_text(
-                                f"⏬ *Downloading... {percent}%*\n\n"
-                                f"📁 *Title:* `{title}`\n"
-                                f"📊 *Progress:* {downloaded//1024//1024}MB/{total_size//1024//1024}MB\n\n"
-                                f"{CREDIT_TEXT}",
-                                parse_mode='Markdown'
-                            )
             
             # Check file size
+            import os
             file_size = os.path.getsize(temp_path)
             size_mb = file_size / (1024 * 1024)
             
-            if size_mb < 1:
-                await query.message.edit_text(
-                    f"❌ *Download Failed*\n\n"
-                    f"Downloaded file is too small ({size_mb:.2f}MB).\n"
-                    f"Please try Direct Download option.\n\n"
-                    f"{CREDIT_TEXT}",
-                    parse_mode='Markdown'
-                )
-                os.remove(temp_path)
-                return
-            
-            # Check if file is too large
-            if size_mb > 200:
+            if size_mb > 50:
                 await query.message.edit_text(
                     f"⚠️ *File Too Large*\n\n"
-                    f"📁 *Title:* `{title}`\n"
-                    f"📊 *Size:* {size_mb:.1f}MB\n\n"
                     f"File is too large for Telegram. Use Direct Download.\n\n"
                     f"{CREDIT_TEXT}",
                     parse_mode='Markdown'
@@ -422,14 +548,11 @@ async def handle_telegram_download(query, context, user_id):
                     reply_markup=reply_markup
                 )
                 
-                os.remove(temp_path)
                 return
             
             # Upload to Telegram
             await query.message.edit_text(
                 f"📤 *Uploading to Telegram...*\n\n"
-                f"📁 *Title:* `{title}`\n"
-                f"📊 *Size:* {size_mb:.1f}MB\n\n"
                 f"⏳ Please wait...\n\n"
                 f"{CREDIT_TEXT}",
                 parse_mode='Markdown'
@@ -442,14 +565,10 @@ async def handle_telegram_download(query, context, user_id):
                         chat_id=chat_id,
                         video=video_file,
                         caption=f"🎬 *{title}*\n\n"
-                                f"📊 Size: {size_mb:.1f}MB\n"
                                 f"✅ Downloaded via @TeraboxDownloaderBot\n\n"
                                 f"{CREDIT_TEXT}",
                         parse_mode='Markdown',
-                        supports_streaming=True,
-                        read_timeout=60,
-                        write_timeout=60,
-                        connect_timeout=60
+                        supports_streaming=True
                     )
                 
                 # Delete processing message
@@ -460,76 +579,32 @@ async def handle_telegram_download(query, context, user_id):
                     chat_id=chat_id,
                     text=f"✅ *Video Sent Successfully!*\n\n"
                          f"The video has been sent directly in Telegram.\n\n"
-                         f"🔔 *Join:* @NetFusionTG\n"
-                         f"✨ Thanks for using our service!",
+                         f"🔔 *Join:* @NetFusionTG",
                     parse_mode='Markdown'
                 )
                 
             except Exception as video_error:
                 print(f"Video send error: {video_error}")
-                
-                # Try as document
-                try:
-                    with open(temp_path, 'rb') as doc_file:
-                        await context.bot.send_document(
-                            chat_id=chat_id,
-                            document=doc_file,
-                            caption=f"📁 *{title}*\n\n"
-                                    f"📊 Size: {size_mb:.1f}MB\n"
-                                    f"✅ Sent as document\n\n"
-                                    f"{CREDIT_TEXT}",
-                            parse_mode='Markdown'
-                        )
-                    
-                    await query.message.delete()
-                    
-                    await context.bot.send_message(
-                        chat_id=chat_id,
-                        text=f"✅ *File Sent as Document!*\n\n"
-                             f"The video was sent as a document file.",
-                        parse_mode='Markdown'
-                    )
-                    
-                except Exception as doc_error:
-                    print(f"Document send error: {doc_error}")
-                    await query.message.edit_text(
-                        f"❌ *Failed to Send File*\n\n"
-                        f"Error: {str(doc_error)[:100]}\n\n"
-                        f"Please try DIRECT DOWNLOAD option.\n\n"
-                        f"{CREDIT_TEXT}",
-                        parse_mode='Markdown'
-                    )
+                await query.message.edit_text(
+                    f"❌ *Failed to Send Video*\n\n"
+                    f"Please try DIRECT DOWNLOAD option.\n\n"
+                    f"{CREDIT_TEXT}",
+                    parse_mode='Markdown'
+                )
         
         else:
-            # Handle 403 and other errors
-            error_msg = f"Download failed with status {response.status_code}"
-            if response.status_code == 403:
-                error_msg = "Access forbidden (403). The server denied the download request."
-            elif response.status_code == 404:
-                error_msg = "File not found (404). The video may have been removed."
-            
             await query.message.edit_text(
                 f"❌ *Download Error*\n\n"
-                f"{error_msg}\n\n"
+                f"Status: {response.status_code}\n"
                 f"Please try DIRECT DOWNLOAD option.\n\n"
                 f"{CREDIT_TEXT}",
                 parse_mode='Markdown'
             )
     
-    except requests.exceptions.Timeout:
-        await query.message.edit_text(
-            f"❌ *Timeout Error*\n\n"
-            f"The download took too long.\n"
-            f"Please try DIRECT DOWNLOAD option.\n\n"
-            f"{CREDIT_TEXT}",
-            parse_mode='Markdown'
-        )
-    
     except Exception as e:
         print(f"Telegram download error: {e}")
         await query.message.edit_text(
             f"❌ *Error Downloading Video*\n\n"
-            f"Error: {str(e)[:100]}\n\n"
             f"Please try DIRECT DOWNLOAD option.\n\n"
             f"{CREDIT_TEXT}",
             parse_mode='Markdown'
@@ -537,19 +612,16 @@ async def handle_telegram_download(query, context, user_id):
     
     finally:
         # Clean up temp file
-        try:
-            if os.path.exists(temp_path):
+        if temp_path and os.path.exists(temp_path):
+            try:
                 os.remove(temp_path)
-        except:
-            pass
+            except:
+                pass
         
         # Clean up session
         if user_id in user_sessions:
             del user_sessions[user_id]
 
-# =============================
-# OTHER COMMANDS
-# =============================
 async def credit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(CREDIT_TEXT, parse_mode='Markdown')
 
@@ -570,21 +642,13 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
    • 📥 DIRECT DOWNLOAD - Get download link
    • 📲 TELEGRAM DOWNLOAD - Video sent directly in Telegram
 
-*Features:*
-• Multiple API fallbacks
-• Progress updates
-• File size checking
-• Auto-delete original links
-
-*Note:* Some videos may have restrictions that prevent downloading.
-
 {CREDIT_TEXT}
 """
     await update.message.reply_text(help_text, parse_mode='Markdown')
 
-# =============================
-# CLEANUP OLD SESSIONS
-# =============================
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"Bot Error: {context.error}")
+
 async def cleanup_old_sessions():
     """Clean up old user sessions periodically"""
     while True:
@@ -603,59 +667,65 @@ async def cleanup_old_sessions():
             print(f"✅ Cleaned {len(expired_users)} expired sessions")
 
 # =============================
-# ERROR HANDLER
+# MAIN FUNCTION FOR RENDER
 # =============================
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle errors"""
-    print(f"Bot Error: {context.error}")
-    
-    try:
-        if update and update.effective_message:
-            await update.effective_message.reply_text(
-                f"⚠️ *Bot Error*\n\n"
-                f"An error occurred. Please try again.\n\n"
-                f"Error: `{str(context.error)[:100]}`",
-                parse_mode='Markdown'
-            )
-    except:
-        pass
-
-# =============================
-# MAIN FUNCTION
-# =============================
-def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+def run_bot():
+    """Run Telegram bot"""
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
     
     # Add command handlers
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("genny", genny_command))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("credit", credit_command))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("genny", genny_command))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("credit", credit_command))
     
     # Add callback query handler
-    app.add_handler(CallbackQueryHandler(button_callback))
+    application.add_handler(CallbackQueryHandler(button_callback))
     
     # Add error handler
-    app.add_error_handler(error_handler)
-    
-    # Start cleanup task
-    asyncio.get_event_loop().create_task(cleanup_old_sessions())
+    application.add_error_handler(error_handler)
     
     print("=" * 50)
     print("🤖 TERABOX DOWNLOADER BOT")
     print("=" * 50)
-    print("✅ Fixed 403 Error")
-    print("✅ Multiple API Support")
-    print("✅ Direct Download Button")
-    print("✅ Telegram Download Button")
-    print("✅ Better Error Handling")
+    print(f"🌐 Web Server: http://0.0.0.0:{PORT}")
+    print("✅ Bot is running...")
     print("=" * 50)
-    print("Bot is running...")
     
-    app.run_polling()
+    # Start cleanup task
+    asyncio.get_event_loop().create_task(cleanup_old_sessions())
+    
+    # Start polling
+    application.run_polling()
+
+def run_web_server():
+    """Run Flask web server"""
+    app.run(host='0.0.0.0', port=PORT, debug=False)
+
+def main():
+    """Main function to run both bot and web server"""
+    import threading
+    
+    # Start bot in a separate thread
+    bot_thread = threading.Thread(target=run_bot, daemon=True)
+    bot_thread.start()
+    
+    # Start web server in main thread
+    run_web_server()
 
 # =============================
-# RUN BOT
+# RUN FOR RENDER
 # =============================
 if __name__ == "__main__":
-    main()
+    # Check if running on Render
+    if os.environ.get('RENDER', '').lower() == 'true':
+        print("🚀 Running on Render Platform")
+        print(f"📦 PORT: {PORT}")
+        print(f"🔑 BOT_TOKEN: {'Set' if BOT_TOKEN else 'Not Set'}")
+        
+        # Start both bot and web server
+        main()
+    else:
+        # Run only bot for local testing
+        print("🏠 Running locally")
+        run_bot()

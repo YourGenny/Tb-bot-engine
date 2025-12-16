@@ -1,23 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.9-slim
 
-# Install ffmpeg
-RUN apt-get update \
- && apt-get install -y --no-install-recommends ffmpeg \
- && rm -rf /var/lib/apt/lists/*
-
-# Workdir
 WORKDIR /app
 
-# Copy deps first for better cache
-COPY requirements.txt ./
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy code
-COPY . .
+COPY terabox.py .
 
-# Env
-ENV PYTHONUNBUFFERED=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PORT=10000
+ENV RENDER=true
 
-# Start the service (web service expected by Render)
-CMD ["python", "run.py"]
+CMD ["gunicorn", "terabox:app", "--bind", "0.0.0.0:10000", "--workers", "2", "--threads", "4", "--timeout", "60"]

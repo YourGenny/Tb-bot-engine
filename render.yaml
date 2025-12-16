@@ -1,9 +1,15 @@
 services:
   - type: web
-    name: telegram-video-compressor
-    env: docker
-    plan: free
-    autoDeploy: true
+    name: terabox-downloader-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn terabox:app
     envVars:
       - key: BOT_TOKEN
-        sync: false  # set in Render dashboard
+        sync: false
+      - key: PORT
+        value: 10000
+      - key: RENDER
+        value: true
+    healthCheckPath: /health
+    autoDeploy: true

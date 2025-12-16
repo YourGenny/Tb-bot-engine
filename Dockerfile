@@ -1,13 +1,30 @@
-FROM python:3.9-slim
+# 🤖 Terabox Downloader Bot
 
-WORKDIR /app
+A Telegram bot for downloading Terabox videos with two options:
+1. 📥 Direct download link
+2. 📲 Video sent directly in Telegram
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+## 🚀 Features
+- Direct download links
+- Telegram video sending
+- Fast processing
+- Beautiful web interface
+- 24/7 Render hosting
+- Auto-cleanup sessions
 
-COPY terabox.py .
+## 📦 Installation
 
-ENV PORT=10000
-ENV RENDER=true
+### Local Development
+```bash
+# Clone repository
+git clone https://github.com/yourusername/terabox-bot.git
+cd terabox-bot
 
-CMD ["gunicorn", "terabox:app", "--bind", "0.0.0.0:10000", "--workers", "2", "--threads", "4", "--timeout", "60"]
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variable
+export BOT_TOKEN="your_bot_token_here"
+
+# Run bot
+python bot.py

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: telegram-video-compressor
+    env: docker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: BOT_TOKEN
+        sync: false  # set in Render dashboard

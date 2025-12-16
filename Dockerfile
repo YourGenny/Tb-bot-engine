@@ -1,30 +1,41 @@
-# 🤖 Terabox Downloader Bot
+FROM python:3.9-slim
 
-A Telegram bot for downloading Terabox videos with two options:
-1. 📥 Direct download link
-2. 📲 Video sent directly in Telegram
+# Set working directory
+WORKDIR /app
 
-## 🚀 Features
-- Direct download links
-- Telegram video sending
-- Fast processing
-- Beautiful web interface
-- 24/7 Render hosting
-- Auto-cleanup sessions
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-## 📦 Installation
+# Copy requirements first (for better caching)
+COPY requirements.txt .
 
-### Local Development
-```bash
-# Clone repository
-git clone https://github.com/yourusername/terabox-bot.git
-cd terabox-bot
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies
-pip install -r requirements.txt
+# Copy application code
+COPY . .
 
-# Set environment variable
-export BOT_TOKEN="your_bot_token_here"
+# Create non-root user
+RUN useradd -m -u 1000 botuser && \
+    chown -R botuser:botuser /app
+USER botuser
 
-# Run bot
-python bot.py
+# Environment variables
+ENV PORT=10000
+ENV RENDER=true
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Expose port
+EXPOSE 10000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:10000/health || exit 1
+
+# Run command
+CMD ["gunicorn", "bot:app", "--bind", "0.0.0.0:10000", "--workers", "2", "--threads", "4", "--timeout", "120", "--access-logfile", "-"]
